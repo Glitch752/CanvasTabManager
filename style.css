@@ -1,6 +1,7 @@
 :root {
     --side-width: 20rem;
     --dark: #23292e;
+    --light: #2e3d47;
 }
 
 *, *:before, *:after {
@@ -20,12 +21,17 @@ body {
 .tabs {
     position: absolute;
     top: 0;
-    left: 0;
+    right: 0;
     height: 100%;
     width: calc(100% - var(--side-width));
     overflow-y: auto;
-    display: flex;
     padding: 5px;
+    
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-content: flex-start;
 }
 
 .tabGroup {
@@ -34,17 +40,22 @@ body {
     height: 9rem;
     width: 18rem;
     padding: 10px;
-    background-color: #334450;
+    background-color: var(--light);
     border-radius: 10px;
     margin: 5px;
-
     position: relative;
+
+    flex-shrink: 0;
 }
-.tabGroup h1 {
+.tabGroup input {
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0;
     padding: 0;
+
+    border: none;
+    background-color: transparent;
+    color: #ffffff;
 }
 .tabGroup .buttons {
     display: flex;
@@ -63,6 +74,41 @@ body {
 .tabGroup img {
     width: 20px;
     height: 20px;
+    border-radius: 100vh;
+    margin-right: 3px;
+    box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.tabGroup .groupColor {
+    display: inline-block;
+    border-radius: 100vh;
+    padding: 2px 0px 0px 3px;
+    margin-right: 5px;
+    box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+.tabGroup .groupColor.grey {
+    background-color: #686868;
+}
+.tabGroup .groupColor.blue {
+    background-color: #3066a3;
+}
+.tabGroup .groupColor.red {
+    background-color: #9b2e2e;
+}
+.tabGroup .groupColor.yellow {
+    background-color: #92922b;
+}
+.tabGroup .groupColor.green {
+    background-color: #2f9b2f;
+}
+.tabGroup .groupColor.pink {
+    background-color: #912c91;
+}
+.tabGroup .groupColor.cyan {
+    background-color: #2d9494;
+}
+.tabGroup .groupColor.orange {
+    background-color: #99702f;
 }
 
 .button {
@@ -89,5 +135,25 @@ body {
 }
 .button.close:hover {
     background-color: #e46a65;
+    color: #000;
+}
+
+.side-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: var(--side-width);
+    background-color: var(--light);
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.button.bring-tabs {
+    background-color: #428842;
+    width: 100%;
+}
+.button.bring-tabs:hover {
+    background-color: #4ca04c;
     color: #000;
 }

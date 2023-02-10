@@ -16,7 +16,6 @@
         "management",
         "tabs",
         "storage",
-        "http://*/*",
         "chrome://favicon/*"
     ],
     "browser_action": {
