@@ -1,0 +1,93 @@
+:root {
+    --side-width: 20rem;
+    --dark: #23292e;
+}
+
+*, *:before, *:after {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--dark);
+    color: #ffffff;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    margin: 0;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.tabs {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: calc(100% - var(--side-width));
+    overflow-y: auto;
+    display: flex;
+    padding: 5px;
+}
+
+.tabGroup {
+    display: flex;
+    flex-direction: column;
+    height: 9rem;
+    width: 18rem;
+    padding: 10px;
+    background-color: #334450;
+    border-radius: 10px;
+    margin: 5px;
+
+    position: relative;
+}
+.tabGroup h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 0;
+}
+.tabGroup .buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+}
+.tabGroup .tabList {
+    margin-top: 5px;
+}
+.tabGroup img {
+    width: 20px;
+    height: 20px;
+}
+
+.button {
+    flex-grow: 1;
+    border-radius: 10px;
+    border: none;
+    color: var(--dark);
+    padding: 10px;
+    font-weight: 600;
+}
+.button.load {
+    background-color: #426888;
+}
+.button.load:hover {
+    background-color: #4c7da0;
+    color: #000;
+}
+
+.button.close {
+    background-color: #d9534f;
+    flex-grow: 0;
+    width: 35px;
+    margin-left: 5px;
+}
+.button.close:hover {
+    background-color: #e46a65;
+    color: #000;
+}
