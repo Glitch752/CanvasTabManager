@@ -67,6 +67,8 @@ window.onload = function() {
     document.querySelector(".button.bring-tabs").addEventListener("click", function() {
         // Send a message to the background script to save the tabs
         chrome.runtime.sendMessage({type: "saveTabs"});
+
+        document.querySelector("#settings").classList.remove("open");
     });
     document.querySelector(".button.settings").addEventListener("click", function() {
         // Open the settings page
@@ -84,7 +86,7 @@ window.onload = function() {
                 linkToCanvas: {
                     enabled: false,
                     domain: null,
-                    apiKey: null
+                    token: null
                 },
                 extension: {
                     openOnStartup: false,
@@ -103,8 +105,38 @@ window.onload = function() {
         // Add listeners to settings and set the values
         let linkToCanvas = document.querySelector("#settings #linkToCanvas");
         linkToCanvas.addEventListener("change", function() {
-            // Send a message to the background script to change the link to canvas setting
-            changeSetting("linkToCanvas", "enabled", this.checked);
+            // If we don't have it, request the webRequest permission
+            if(!settings.linkToCanvas.enabled) {
+                // Check if we have the permission
+                chrome.permissions.contains({
+                    permissions: ["webRequest"],
+                    origins: ["https://*.instructure.com/*"]
+                }, function(result) {
+                    if(result) {
+                        // If we have the permission, change the setting
+                        changeSetting("linkToCanvas", "enabled", true);
+                        chrome.runtime.sendMessage({type: "addRequestListener"});
+                    } else {
+                        chrome.permissions.request({
+                            permissions: ["webRequest"],
+                            origins: ["https://*.instructure.com/*"]
+                        }, function(granted) {
+                            if(granted) {
+                                // The user granted the permission, so change the setting. We don't need to check the checkbox because it's already checked.
+                                changeSetting("linkToCanvas", "enabled", true);
+                                chrome.runtime.sendMessage({type: "addRequestListener"});
+                            } else {
+                                // The user didn't grant the permission, so don't change the setting and uncheck the checkbox.
+                                linkToCanvas.checked = false;
+                                alert("You must enable the webRequest permission to use canvas linking. This is so we can access your account's courses.");
+                            }
+                        });
+                    }
+                });
+            } else {
+                // If we have it, change the setting
+                changeSetting("linkToCanvas", "enabled", false);
+            }
         });
         linkToCanvas.checked = settings.linkToCanvas.enabled;
 
@@ -115,12 +147,12 @@ window.onload = function() {
         });
         linkToCanvasDomain.value = settings.linkToCanvas.domain;
 
-        let linkToCanvasAPIKey = document.querySelector("#settings #canvasAPIKey");
-        linkToCanvasAPIKey.addEventListener("input", function() {
-            // Send a message to the background script to change the link to canvas API key setting
-            changeSetting("linkToCanvas", "apiKey", this.value);
+        let linkToCanvasToken = document.querySelector("#settings #canvasToken");
+        linkToCanvasToken.addEventListener("input", function() {
+            // Send a message to the background script to change the link to canvas token setting
+            changeSetting("linkToCanvas", "token", this.value);
         });
-        linkToCanvasAPIKey.value = settings.linkToCanvas.apiKey;
+        linkToCanvasToken.value = settings.linkToCanvas.token;
 
         let openOnStartup = document.querySelector("#settings #openOnStartup");
         openOnStartup.addEventListener("change", function() {

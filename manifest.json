@@ -16,7 +16,11 @@
         "favicon"
     ],
     "optional_permissions": [
-        "management"
+        "management",
+        "webRequest"
+    ],
+    "optional_host_permissions": [
+        "https://*.instructure.com/*"
     ],
     "action": {}
 }

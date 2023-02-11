@@ -1,23 +1,113 @@
 let extensionID = chrome.runtime.id;
 
 chrome.action.onClicked.addListener(function(tab) {
-    bringInTabs();
-});
-
-chrome.runtime.onStartup.addListener(function() {
-    chrome.storage.sync.get("hasRunBefore", function(data) {
-        if(!data.hasRunBefore) {
-            chrome.storage.sync.set({hasRunBefore: true});
-            startIntro();
+    chrome.storage.sync.get("settings", function(data) {
+        if(data.settings?.extension?.clickIcon === "bringInTabs") {
+            bringInTabs();
         } else {
-            chrome.storage.sync.get("openOnStartup", function(data) {
-                if(data.openOnStartup) {
-                    chrome.tabs.create({url: "/index.html"});
-                }
-            });
+            chrome.tabs.create({url: "/index.html"});
         }
     });
 });
+
+chrome.runtime.onStartup.addListener(function() {
+    chrome.storage.sync.get("settings", function(data) {
+        if(data.settings?.extension?.openOnStartup) {
+            chrome.tabs.create({url: "/index.html"});
+        }
+
+        if(data.settings?.linkToCanvas?.enabled) {
+            addRequestListener();
+        }
+    });
+});
+
+// On install
+chrome.runtime.onInstalled.addListener(function() {
+    startIntro();
+    addRequestListener();
+});
+
+let listenerAdded = false;
+let generatedToken = false;
+
+function addRequestListener() {
+    if(listenerAdded) return;
+    listenerAdded = true;
+
+    // Handling for grabbing canvas API keys so we can get classes.
+    chrome.webRequest.onBeforeSendHeaders.addListener((data) => {
+        let url = data.url;
+        // If we are on a .instructure.com page
+        if(url.match(/https:\/\/.*\.instructure\.com\/.*/)) {
+			for(let i = 0; i < data.requestHeaders.length; i++) {
+                let header = data.requestHeaders[i];
+				if (header.name === 'X-CSRF-Token' && header.value !== undefined) {
+					chrome.storage.sync.get("settings", function(data) {
+                        let settings = data.settings;
+                        if(!settings) {
+                            settings = {
+                                linkToCanvas: {
+                                    enabled: false,
+                                    domain: null,
+                                    token: null
+                                },
+                                extension: {
+                                    openOnStartup: false,
+                                    clickIcon: "bringInTabs"
+                                }
+                            };
+                        }
+
+                        settings.linkToCanvas.browserToken = header.value;
+                        if(!generatedToken && !settings.linkToCanvas.token) {
+                            generateToken(header.value, url.split(".")[0].slice(8), settings);
+                            generatedToken = true;
+                        }
+                        chrome.storage.sync.set({settings: settings});
+                    });
+				}
+			}
+        }
+    }, {urls: ["<all_urls>"]}, ["requestHeaders"]);
+}
+
+function generateToken(token, domain, settings) {
+    // Trickery mostly copied from CanvasTools
+	var data = {
+        "_method": "post",
+        "access_token[expires_at]": "",
+        "access_token[purpose]": "Canvas Tab Manager",
+        "authenticity_token": token,
+        "expires_at": "",
+        "purpose": "Canvas Tab Manager",
+        "utf8": ""
+	};
+
+    fetch(`https://${domain}.instructure.com/profile/tokens`, {
+        "method": "POST",
+        "mode": "no-cors",
+        "headers": {
+            "accept": "application/json, text/javascript, application/json+canvas-string-ids, */*; q=0.01",
+            "x-csrf-token": token,
+            "x-requested-with": "XMLHttpRequest",
+            "content-type": "application/x-www-form-urlencoded",
+            "accept-language": "en-US,en;q=0.9"
+        },
+        "body": Object.keys(data).map(function(key) {
+            return encodeURIComponent(key) + '=' + encodeURIComponent(data[key])
+        }).join('&')
+	}).then(response => response.json()).then(response => {
+        var token = response['visible_token'];
+        settings.linkToCanvas.token = token;
+        settings.linkToCanvas.tokenID = response['id'];
+        settings.linkToCanvas.domain = domain;
+        chrome.storage.sync.set({settings: settings});
+    });
+}
+
+function startIntro() {
+}
 
 // Handle messages from the extension page
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
@@ -97,6 +187,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         }
         case "saveTabs": {
             bringInTabs();
+            break;
+        }
+        case "addRequestListener": {
+            addRequestListener();
             break;
         }
     }
