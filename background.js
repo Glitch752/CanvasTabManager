@@ -254,6 +254,32 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             addRequestListener();
             break;
         }
+        case "moveTabGroup": {
+            let fromCategory = request.from.category;
+            let fromGroup = request.from.group;
+            let toCategory = request.to.category;
+            let toGroup = request.to.group;
+
+            getTabs(function(tabs) {
+                if(!tabs?.[fromCategory]?.groups?.[fromGroup]) return;
+                if(toGroup === -1) {
+                    if(!tabs?.[toCategory]) return;
+                } else {
+                    if(!tabs?.[toCategory]?.groups?.[toGroup]) return;
+                }
+
+                let tabGroup = tabs[fromCategory].groups[fromGroup];
+                tabs[fromCategory].groups.splice(fromGroup, 1);
+                if(toGroup === -1) tabs[toCategory].groups.push(tabGroup)
+                else tabs[toCategory].groups.splice(toGroup, 0, tabGroup);
+
+                // Save the tabs
+                saveTabs(tabs, function() {
+                    // Send a message to the extension page to update the tabs
+                    chrome.runtime.sendMessage({type: "updateTabs"});
+                });
+            });
+        }
     }
 });
 

@@ -15,13 +15,14 @@ function updateTabs(tabs) {
     
     for(let category = 0; category < tabs.length; category++) {
         groups = tabs[category].groups;
-        tabsElement.appendChild(document.createRange().createContextualFragment(`<div class="category">${category === 0 ? `` : `
+        tabsElement.appendChild(document.createRange().createContextualFragment(`<div class="category" data-index="${category}">${category === 0 ? `<h1><span>Uncategorized</span></h1>` : `
             <h1>${tabs[category].name}${tabs[category].class && tabs[category].class.code !== tabs[category].name ? `<span>${tabs[category].class.code}</span>` : ""}</h1>
-        `}</div>`));
+        `}${groups.length === 0 ? `<div class="noTabs">No tabs in category. Drag a set of tabs to move them here.</div>` : ""}</div>`));
+
         let categoryElement = tabsElement.querySelectorAll(".category")[category];
         for(let group = 0; group < groups.length; group++) {
             let addedHTML = "";
-            addedHTML  += `<div class="tabGroup"><input type="text" value="${groups[group].name}" /><div class="tabList">`;
+            addedHTML  += `<div class="tabGroup" data-index=${group}><input type="text" value="${groups[group].name}" /><div class="tabList">`;
             for(let groupId in groups[group].groups) {
                 let groupData = groups[group].groups[groupId];
                 addedHTML += `<div class="groupColor ${groupData.color}">`
@@ -35,6 +36,14 @@ function updateTabs(tabs) {
                 <button class="close button">X</button>
             </div></div>`;
             categoryElement.appendChild(document.createRange().createContextualFragment(addedHTML));
+
+            // Drag and drop
+            let tabGroup = categoryElement.querySelectorAll(".tabGroup")[group];
+            tabGroup.draggable = true;
+            tabGroup.addEventListener("dragstart", function(event) {
+                event.dataTransfer.setData("group", group);
+                event.dataTransfer.setData("category", category);
+            });
 
             // Add listeners to the buttons
             let buttons = categoryElement.querySelectorAll(".buttons")[group];
@@ -51,6 +60,30 @@ function updateTabs(tabs) {
                 changeTabGroupName(group, textBox.value);
             });
         }
+
+        // Listeners for drag and drop
+        categoryElement.addEventListener("dragover", function(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+        });
+        categoryElement.addEventListener("drop", function(event) {
+            event.preventDefault();
+            let newCategory = event.target.closest(".category");
+            let newGroup = event.target.closest(".tabGroup");
+            if(newCategory) {
+                // Get the category and group index
+                let newCategoryIndex = newCategory.dataset.index;
+                let newGroupIndex = newGroup?.dataset?.index ?? -1;
+
+                console.log(newCategoryIndex, newGroupIndex);
+
+                let group = event.dataTransfer.getData("group");
+                let category = event.dataTransfer.getData("category");
+
+                // Send a message to the background script to move the tab group
+                chrome.runtime.sendMessage({type: "moveTabGroup", from: {category: category, group: group}, to: {category: newCategoryIndex, group: newGroupIndex}});
+            }
+        });
     }
 }
 

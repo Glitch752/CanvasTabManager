@@ -1,6 +1,7 @@
 :root {
     --side-width: 20rem;
     --dark: #23292e;
+    --mid: #272d30;
     --light: #2e3d47;
 }
 
@@ -37,6 +38,12 @@ body {
     flex-direction: row;
     justify-content: flex-start;
     align-content: flex-start;
+
+    margin: 5px;
+    border-radius: 10px;
+    padding: 5px;
+    background-color: var(--mid);
+    box-shadow: 0 0 1px 2px var(--light);
 }
 .category h1 {
     margin: 0;
