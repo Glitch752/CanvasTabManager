@@ -12,40 +12,45 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 function updateTabs(tabs) {
     let tabsElement = document.getElementById("tabs");
     tabsElement.innerHTML = "";
-    if(!tabs[0]) tabs[0] = {name: "Science", groups: {}}; // If there are no categories, add a default one
-
-    tabs = tabs[0].groups;
-    for(let i = 0; i < tabs.length; i++) {
-        let addedHTML = "";
-        addedHTML  += `<div class="tabGroup"><input type="text" value="${tabs[i].name}" /><div class="tabList">`;
-        for(let group in tabs[i].groups) {
-            let groupData = tabs[i].groups[group];
-            addedHTML += `<div class="groupColor ${groupData.color}">`
-            for(let j = 0; j < groupData.tabs.length; j++) {
-                addedHTML += `<img src="chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(groupData.tabs[j])}&size=64" />`;
+    
+    for(let category = 0; category < tabs.length; category++) {
+        groups = tabs[category].groups;
+        tabsElement.appendChild(document.createRange().createContextualFragment(`<div class="category">${category === 0 ? `` : `
+            <h1>${tabs[category].name}${tabs[category].class && tabs[category].class.code !== tabs[category].name ? `<span>${tabs[category].class.code}</span>` : ""}</h1>
+        `}</div>`));
+        let categoryElement = tabsElement.querySelectorAll(".category")[category];
+        for(let group = 0; group < groups.length; group++) {
+            let addedHTML = "";
+            addedHTML  += `<div class="tabGroup"><input type="text" value="${groups[group].name}" /><div class="tabList">`;
+            for(let groupId in groups[group].groups) {
+                let groupData = groups[group].groups[groupId];
+                addedHTML += `<div class="groupColor ${groupData.color}">`
+                for(let tab = 0; tab < groupData.tabs.length; tab++) {
+                    addedHTML += `<img src="chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(groupData.tabs[tab])}&size=64" />`;
+                }
+                addedHTML += `</div>`;
             }
-            addedHTML += `</div>`;
+            addedHTML += `</div><div class="buttons">
+                <button class="load button">Load</button>
+                <button class="close button">X</button>
+            </div></div>`;
+            categoryElement.appendChild(document.createRange().createContextualFragment(addedHTML));
+
+            // Add listeners to the buttons
+            let buttons = categoryElement.querySelectorAll(".buttons")[group];
+            buttons.querySelectorAll(".load")[0].addEventListener("click", function() {
+                loadTabs(group);
+            });
+            buttons.querySelectorAll(".close")[0].addEventListener("click", function() {
+                deleteTabGroup(group);
+            });
+
+            // Add a listener to the text box
+            let textBox = categoryElement.querySelectorAll("input")[group];
+            textBox.addEventListener("change", function() {
+                changeTabGroupName(group, textBox.value);
+            });
         }
-        addedHTML += `</div><div class="buttons">
-            <button class="load button">Load</button>
-            <button class="close button">X</button>
-        </div></div>`;
-        tabsElement.appendChild(document.createRange().createContextualFragment(addedHTML));
-
-        // Add listeners to the buttons
-        let buttons = tabsElement.querySelectorAll(".buttons")[i];
-        buttons.querySelectorAll(".load")[0].addEventListener("click", function() {
-            loadTabs(i);
-        });
-        buttons.querySelectorAll(".close")[0].addEventListener("click", function() {
-            deleteTabGroup(i);
-        });
-
-        // Add a listener to the text box
-        let textBox = tabsElement.querySelectorAll("input")[i];
-        textBox.addEventListener("change", function() {
-            changeTabGroupName(i, textBox.value);
-        });
     }
 }
 

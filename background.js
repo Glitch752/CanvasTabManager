@@ -27,6 +27,12 @@ chrome.runtime.onStartup.addListener(function() {
 chrome.runtime.onInstalled.addListener(function() {
     startIntro();
     addRequestListener();
+    
+    chrome.storage.sync.get("settings", function(data) {
+        if(data.settings?.linkToCanvas?.enabled) {
+            updateClasses();
+        }
+    });
 });
 
 let listenerAdded = false;
@@ -110,22 +116,59 @@ function generateToken(token, domain, settings) {
 }
 
 function updateClasses() {
-    chrome.storage.sync.get("settings", function(data) {
+    chrome.storage.sync.get(["settings", "tabs"], function(data) {
         let settings = data.settings;
         if(!settings) return;
 
         if(settings.linkToCanvas.token) {
-            fetch(`https://${settings.linkToCanvas.domain}.instructure.com/api/v1//courses?access_token=${settings.linkToCanvas.token}`).then(response => response.json()).then(response => {
+            fetch(`https://${settings.linkToCanvas.domain}.instructure.com/api/v1/courses?access_token=${settings.linkToCanvas.token}`).then(response => response.json()).then(response => {
                 let classes = [];
                 for(let i = 0; i < response.length; i++) {
                     let course = response[i];
                     classes.push({
                         id: course.id,
                         name: course.name,
-                        url: course.html_url
+                        code: course.course_code
                     });
                 }
-                chrome.storage.sync.set({classes: classes});
+                let tabs = data.tabs;
+                if(!tabs) tabs = [];
+                // Add classes to tabs that don't already exist
+                for(let i = 0; i < tabs.length; i++) {
+                    let tab = tabs[i];
+                    let classID = tab.class?.id ?? null;
+                    // If the class already exists, update it
+                    let classData = classes.find(c => c.id === classID);
+                    if(classData) {
+                        tab.class = classData;
+                        tab.name = classData.name;
+                    } else {
+                        // If the class doesn't exist and this once was a class category, remove it
+                        if(tab.class) {
+                            tabs.splice(i, 1);
+                            i--;
+                        }
+                    }
+                }
+
+                // Add classes to tabs that don't already exist
+                for(let i = 0; i < classes.length; i++) {
+                    let classData = classes[i];
+                    let classID = classData.id;
+                    // If the class already exists, update it
+                    let tab = tabs.find(t => t.class?.id === classID);
+                    if(!tab) {
+                        tabs.push({
+                            class: classData,
+                            groups: [],
+                            name: classData.name
+                        });
+                    }
+                }
+
+                chrome.storage.sync.set({tabs: tabs}, function() {
+                    chrome.runtime.sendMessage({type: "updateTabs"});
+                });
             });
         }
     });
@@ -264,7 +307,7 @@ function bringInTabs() {
         }
 
         getTabs(function(tabs) {
-            if(!tabs?.[0]?.groups) tabs = [{name: "Science", groups: []}]; // If there are no categories, add a default one
+            if(!tabs?.[0]?.groups) tabs = [{name: "", groups: []}]; // If there are no categories, add a default one for uncategorized tabs
             tabs[0].groups.push({
                 groups: urls,
                 name: "Tab group"
