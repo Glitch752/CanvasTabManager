@@ -140,10 +140,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         case "loadTabs": {
             let index = request.loadTabs;
             getTabs(function(tabs) {
-                if(!tabs?.[0]?.[index]) return;
+                if(!tabs?.[0]?.groups?.[index]) return;
 
-                for(let group in tabs[0][index].groups) {
-                    let groupData = tabs[0][index].groups[group];
+                for(let group in tabs[0].groups[index].groups) {
+                    let groupData = tabs[0].groups[index].groups[group];
 
                     let openedTabIds = [];
 
@@ -175,9 +175,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         case "deleteTabGroup": {
             let index = request.deleteTabGroup;
             getTabs(function(tabs) {
-                if(!tabs?.[0]?.[index]) return;
+                if(!tabs?.[0]?.groups?.[index]) return;
 
-                tabs[0].splice(index, 1);
+                tabs[0].groups.splice(index, 1);
 
                 // Save the tabs
                 saveTabs(tabs, function() {
@@ -193,7 +193,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             getTabs(function(tabs) {
                 if(!tabs?.[0]?.[index]) return;
 
-                tabs[0][index].name = name;
+                tabs[0].groups[index].name = name;
 
                 // Save the tabs
                 saveTabs(tabs, function() {
@@ -264,10 +264,10 @@ function bringInTabs() {
         }
 
         getTabs(function(tabs) {
-            if(!tabs?.[0]) tabs = [[]];
-            tabs[0].push({
+            if(!tabs?.[0]?.groups) tabs = [{name: "Science", groups: []}]; // If there are no categories, add a default one
+            tabs[0].groups.push({
                 groups: urls,
-                name: "Science"
+                name: "Tab group"
             });
 
             // Save the tabs

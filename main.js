@@ -12,13 +12,14 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 function updateTabs(tabs) {
     let tabsElement = document.getElementById("tabs");
     tabsElement.innerHTML = "";
-    if(!tabs[0]) tabs[0] = [];
-    
-    for(let i = 0; i < tabs[0].length; i++) {
+    if(!tabs[0]) tabs[0] = {name: "Science", groups: {}}; // If there are no categories, add a default one
+
+    tabs = tabs[0].groups;
+    for(let i = 0; i < tabs.length; i++) {
         let addedHTML = "";
-        addedHTML  += `<div class="tabGroup"><input type="text" value="${tabs[0][i].name}" /><div class="tabList">`;
-        for(let group in tabs[0][i].groups) {
-            let groupData = tabs[0][i].groups[group];
+        addedHTML  += `<div class="tabGroup"><input type="text" value="${tabs[i].name}" /><div class="tabList">`;
+        for(let group in tabs[i].groups) {
+            let groupData = tabs[i].groups[group];
             addedHTML += `<div class="groupColor ${groupData.color}">`
             for(let j = 0; j < groupData.tabs.length; j++) {
                 addedHTML += `<img src="chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(groupData.tabs[j])}&size=64" />`;
