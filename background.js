@@ -29,8 +29,26 @@ chrome.runtime.onInstalled.addListener(function() {
     addRequestListener();
     
     chrome.storage.sync.get("settings", function(data) {
-        if(data.settings?.linkToCanvas?.enabled) {
-            updateClasses();
+        let settings = data.settings;
+        if(!settings) {
+            settings = {
+                linkToCanvas: {
+                    enabled: false,
+                    domain: null,
+                    token: null,
+                    bringInTabs: "askClass"
+                },
+                extension: {
+                    openOnStartup: false,
+                    clickIcon: "bringInTabs"
+                }
+            };
+
+            chrome.storage.sync.set({settings: settings});
+        }
+
+        if(settings?.linkToCanvas?.enabled) {
+            updateClasses(false);
         }
     });
 });
@@ -52,19 +70,6 @@ function addRequestListener() {
 				if (header.name === 'X-CSRF-Token' && header.value !== undefined) {
 					chrome.storage.sync.get("settings", function(data) {
                         let settings = data.settings;
-                        if(!settings) {
-                            settings = {
-                                linkToCanvas: {
-                                    enabled: false,
-                                    domain: null,
-                                    token: null
-                                },
-                                extension: {
-                                    openOnStartup: false,
-                                    clickIcon: "bringInTabs"
-                                }
-                            };
-                        }
 
                         settings.linkToCanvas.browserToken = header.value;
                         if(!generatedToken && !settings.linkToCanvas.token) {
@@ -115,7 +120,7 @@ function generateToken(token, domain, settings) {
     });
 }
 
-function updateClasses() {
+function updateClasses(send = true) {
     chrome.storage.sync.get(["settings", "tabs"], function(data) {
         let settings = data.settings;
         if(!settings) return;
@@ -132,7 +137,8 @@ function updateClasses() {
                     });
                 }
                 let tabs = data.tabs;
-                if(!tabs) tabs = [];
+                if(!tabs) tabs = [ { name: "", groups: [] }];
+                if(tabs[0].class) tabs.unshift({ name: "", groups: [] });
                 // Add classes to tabs that don't already exist
                 for(let i = 0; i < tabs.length; i++) {
                     let tab = tabs[i];
@@ -167,7 +173,7 @@ function updateClasses() {
                 }
 
                 chrome.storage.sync.set({tabs: tabs}, function() {
-                    chrome.runtime.sendMessage({type: "updateTabs"});
+                    if(send) chrome.runtime.sendMessage({type: "updateTabs"});
                 });
             });
         }
@@ -182,11 +188,12 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     switch(request.type) {
         case "loadTabs": {
             let index = request.loadTabs;
+            let category = request.category;
             getTabs(function(tabs) {
-                if(!tabs?.[0]?.groups?.[index]) return;
+                if(!tabs?.[category]?.groups?.[index]) return;
 
-                for(let group in tabs[0].groups[index].groups) {
-                    let groupData = tabs[0].groups[index].groups[group];
+                for(let group in tabs[category].groups[index].groups) {
+                    let groupData = tabs[category].groups[index].groups[group];
 
                     let openedTabIds = [];
 
@@ -217,10 +224,11 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         }
         case "deleteTabGroup": {
             let index = request.deleteTabGroup;
+            let category = request.category;
             getTabs(function(tabs) {
-                if(!tabs?.[0]?.groups?.[index]) return;
+                if(!tabs?.[category]?.groups?.[index]) return;
 
-                tabs[0].groups.splice(index, 1);
+                tabs[category].groups.splice(index, 1);
 
                 // Save the tabs
                 saveTabs(tabs, function() {
@@ -305,44 +313,53 @@ function bringInTabs() {
             chrome.tabs.create({url: "/index.html"});
         }
 
-        // Keys are group ids, values are an object with the properties:
-        //   tabs (an array of tab urls)
-        //   name (the name of the group)
-        //   color (the color of the group)
-        //   collapsed (whether the group is collapsed)
+        chrome.storage.sync.get("settings", function(data) {
+            let settings = data.settings;
+            // Keys are group ids, values are an object with the properties:
+            //   tabs (an array of tab urls)
+            //   name (the name of the group)
+            //   color (the color of the group)
+            //   collapsed (whether the group is collapsed)
+            let urls = {}; 
+            
+            for (let i = 0; i < tabs.length; i++) {
+                // Don't save the extension page
+                if (tabs[i].url.startsWith("chrome-extension://" + extensionID) || !tabs[i].url) continue;
 
-        let urls = {}; 
-        for (let i = 0; i < tabs.length; i++) {
-            // Don't save the extension page
-            if (tabs[i].url.startsWith("chrome-extension://" + extensionID) || !tabs[i].url) continue;
-
-            if(!urls[tabs[i].groupId]) {
-                urls[tabs[i].groupId] = {tabs: [], name: "Group " + tabs[i].groupId, color: "none", collapsed: false};
-                if(tabs[i].groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
-                    chrome.tabGroups.get(tabs[i].groupId, function(group) {
-                        urls[tabs[i].groupId].name = group.title;
-                        urls[tabs[i].groupId].color = group.color;
-                        urls[tabs[i].groupId].collapsed = group.collapsed;
-                    });
+                if(!urls[tabs[i].groupId]) {
+                    urls[tabs[i].groupId] = {tabs: [], name: "Group " + tabs[i].groupId, color: "none", collapsed: false};
+                    if(tabs[i].groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+                        chrome.tabGroups.get(tabs[i].groupId, function(group) {
+                            urls[tabs[i].groupId].name = group.title;
+                            urls[tabs[i].groupId].color = group.color;
+                            urls[tabs[i].groupId].collapsed = group.collapsed;
+                        });
+                    }
                 }
+                urls[tabs[i].groupId].tabs.push(tabs[i].url);
+
+                // Close the tab
+                chrome.tabs.remove(tabs[i].id);
             }
-            urls[tabs[i].groupId].tabs.push(tabs[i].url);
 
-            // Close the tab
-            chrome.tabs.remove(tabs[i].id);
-        }
+            getTabs(function(tabs) {
+                if(!tabs?.[0]?.groups) tabs = [{name: "", groups: []}]; // If there are no categories, add a default one for uncategorized tabs
+                tabs[0].groups.push({
+                    groups: urls,
+                    name: "Tab group"
+                });
 
-        getTabs(function(tabs) {
-            if(!tabs?.[0]?.groups) tabs = [{name: "", groups: []}]; // If there are no categories, add a default one for uncategorized tabs
-            tabs[0].groups.push({
-                groups: urls,
-                name: "Tab group"
-            });
+                // Save the tabs
+                saveTabs(tabs, function() {
+                    // Check if we need to ask what category to put the tabs in
+                    if(settings?.linkToCanvas?.enabled && settings?.linkToCanvas?.bringInTabs === "askClass") {
+                        // Send a message to the extension page to ask what class to put the tabs in
+                        chrome.runtime.sendMessage({type: "askClass"});
+                    }
 
-            // Save the tabs
-            saveTabs(tabs, function() {
-                // Send a message to the extension page to update the tabs
-                chrome.runtime.sendMessage({type: "updateTabs"});
+                    // Send a message to the extension page to update the tabs
+                    chrome.runtime.sendMessage({type: "updateTabs"});
+                });
             });
         });
     });

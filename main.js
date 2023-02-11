@@ -1,20 +1,68 @@
 // Add a listener for messages from the background script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.type == "updateTabs") {
+    if(request.type == "updateTabs") {
         // Get the tabs
         chrome.storage.sync.get("tabs", function(data) {
             // Update the tabs
             updateTabs(data.tabs);
         });
+    } else if(request.type === "askClass") {
+        updateAskClass();
     }
 });
+
+function updateAskClass() {
+    let askClassBody = document.getElementById("askClassBody");
+    askClassBody.innerHTML = "";
+
+    chrome.storage.sync.get("tabs", function(data) {
+        let tabs = data.tabs;
+        let classes = 0;
+        askClassBody.appendChild(document.createRange().createContextualFragment(`
+            <div class="ask-class-class"><h1>No class</h1></div>
+        `));
+        let classElement = askClassBody.querySelectorAll(".ask-class-class")[0];
+        classElement.addEventListener("click", function() {
+            // Close the ask class window
+            document.getElementById("askClass").classList.remove("open");
+        });
+
+        for(let category = 0; category < tabs.length; category++) {
+            let categoryData = tabs[category];
+            if(categoryData.class) {
+                askClassBody.appendChild(document.createRange().createContextualFragment(`
+                    <div class="ask-class-class"><h1>${categoryData.name}</h1><span class="class">${categoryData.class.code}</span></div>
+                `));
+                let classElement = askClassBody.querySelectorAll(".ask-class-class")[classes + 1];
+                classElement.addEventListener("click", function() {
+                    // Move the last element of the first category into the category that was clicked
+                    let lastGroup = tabs[0].groups.pop();
+                    if(!lastGroup) return;
+
+                    tabs[category].groups.push(lastGroup);
+
+                    // Save the tabs
+                    chrome.storage.sync.set({tabs: tabs}, function() {
+                        // Close the ask class window
+                        document.getElementById("askClass").classList.remove("open");
+
+                        updateTabs(tabs);
+                    });
+                });
+                classes++;
+            }
+        }
+    });
+    
+    document.getElementById("askClass").classList.add("open");
+}
 
 function updateTabs(tabs) {
     let tabsElement = document.getElementById("tabs");
     tabsElement.innerHTML = "";
     
     for(let category = 0; category < tabs.length; category++) {
-        groups = tabs[category].groups;
+        let groups = tabs[category].groups;
         tabsElement.appendChild(document.createRange().createContextualFragment(`<div class="category" data-index="${category}">${category === 0 ? `<h1><span>Uncategorized</span></h1>` : `
             <h1>${tabs[category].name}${tabs[category].class && tabs[category].class.code !== tabs[category].name ? `<span>${tabs[category].class.code}</span>` : ""}</h1>
         `}${groups.length === 0 ? `<div class="noTabs">No tabs in category. Drag a set of tabs to move them here.</div>` : ""}</div>`));
@@ -48,10 +96,10 @@ function updateTabs(tabs) {
             // Add listeners to the buttons
             let buttons = categoryElement.querySelectorAll(".buttons")[group];
             buttons.querySelectorAll(".load")[0].addEventListener("click", function() {
-                loadTabs(group);
+                loadTabs(group, category);
             });
             buttons.querySelectorAll(".close")[0].addEventListener("click", function() {
-                deleteTabGroup(group);
+                deleteTabGroup(group, category);
             });
 
             // Add a listener to the text box
@@ -89,11 +137,11 @@ function updateTabs(tabs) {
 
 function loadTabs(index) {
     // Send a message to the background script to load the tabs
-    chrome.runtime.sendMessage({type: "loadTabs", loadTabs: index});
+    chrome.runtime.sendMessage({type: "loadTabs", loadTabs: index, category: category});
 }
-function deleteTabGroup(index) {
+function deleteTabGroup(index, category) {
     // Send a message to the background script to delete the tab group
-    chrome.runtime.sendMessage({type: "deleteTabGroup", deleteTabGroup: index});
+    chrome.runtime.sendMessage({type: "deleteTabGroup", deleteTabGroup: index, category: category});
 }
 function changeTabGroupName(index, name) {
     // Send a message to the background script to change the tab group name
@@ -122,24 +170,13 @@ window.onload = function() {
         // Close the settings page
         document.getElementById("settings").classList.toggle("open");   
     });
+    document.querySelector(".button.close-ask-class").addEventListener("click", function() {
+        // Close the ask class page
+        document.getElementById("askClass").classList.toggle("open");
+    });
 
     chrome.storage.sync.get("settings", function(data) {
         let settings = data.settings;
-        if(!settings) {
-            settings = {
-                linkToCanvas: {
-                    enabled: false,
-                    domain: null,
-                    token: null
-                },
-                extension: {
-                    openOnStartup: false,
-                    clickIcon: "bringInTabs"
-                }
-            };
-
-            chrome.storage.sync.set({settings: settings});
-        }
 
         function changeSetting(setting, key, value) {
             settings[setting][key] = value;
@@ -186,28 +223,30 @@ window.onload = function() {
 
         let linkToCanvasDomain = document.querySelector("#settings #canvasDomain");
         linkToCanvasDomain.addEventListener("input", function() {
-            // Send a message to the background script to change the link to canvas domain setting
             changeSetting("linkToCanvas", "domain", this.value);
         });
         linkToCanvasDomain.value = settings.linkToCanvas.domain;
 
         let linkToCanvasToken = document.querySelector("#settings #canvasToken");
         linkToCanvasToken.addEventListener("input", function() {
-            // Send a message to the background script to change the link to canvas token setting
             changeSetting("linkToCanvas", "token", this.value);
         });
         linkToCanvasToken.value = settings.linkToCanvas.token;
 
+        let linkToCanvasAskClass = document.querySelector("#settings #bringInTabs");
+        linkToCanvasAskClass.addEventListener("change", function() {
+            changeSetting("linkToCanvas", "bringInTabs", this.value);
+        });
+        linkToCanvasAskClass.value = settings.linkToCanvas.bringInTabs;
+
         let openOnStartup = document.querySelector("#settings #openOnStartup");
         openOnStartup.addEventListener("change", function() {
-            // Send a message to the background script to change the open on startup setting
             changeSetting("extension", "openOnStartup", this.checked);
         });
         openOnStartup.checked = settings.extension.openOnStartup;
 
         let clickIcon = document.querySelector("#settings #clickExtensionIcon");
         clickIcon.addEventListener("change", function() {
-            // Send a message to the background script to change the click icon setting
             changeSetting("extension", "clickIcon", this.value);
         });
         clickIcon.value = settings.extension.clickIcon;

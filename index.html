@@ -35,6 +35,13 @@
                     <label for="canvasToken">Canvas authentication token</label>
                     <input type="text" id="canvasToken" name="canvasToken" placeholder="Token...">
                 </div>
+                <div class="settings-item">
+                    <label for="bringInTabs">Bringing in tabs</label>
+                    <select name="bringInTabs" id="bringInTabs">
+                        <option value="noAskClass">doesn't ask what class to put them in</option>
+                        <option value="askClass">asks what class to put them in</option>
+                    </select>
+                </div>
             </div>
             <div class="settings-section">
                 <h2>Extension</h2>
@@ -51,6 +58,15 @@
                     </select>
                 </div>
             </div>
+        </div>
+    </div>
+    <div class="ask-class-wrapper" id="askClass">
+        <div class="ask-class">
+            <div class="ask-class-header">
+                <h1>What class is this for?</h1>
+                <button class="button close-ask-class">Cancel</button>
+            </div>
+            <div class="ask-class-body" id="askClassBody"></div>
         </div>
     </div>
 </body>
