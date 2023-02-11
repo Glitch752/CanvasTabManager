@@ -222,6 +222,39 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             });
             break;
         }
+        case "loadTabsGroup": {
+            let index = request.loadTabs;
+            let category = request.category;
+            let group = request.group;
+            getTabs(function(tabs) {
+                if(!tabs?.[category]?.groups?.[index]?.groups?.[group]) return;
+
+                let groupData = tabs[category].groups[index].groups[group];
+                let openedTabIds = [];
+                for(let j = 0; j < groupData.tabs.length; j++) {
+                    chrome.tabs.create({url: groupData.tabs[j]}, function(tab) {
+                        openedTabIds.push(tab.id);
+
+                        if(openedTabIds.length == groupData.tabs.length) {
+                            // Check if this is a real group or the ungrouped tabs
+                            if(parseInt(group) !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+                                // Grouped tabs
+                                chrome.tabs.group({
+                                    tabIds: openedTabIds
+                                }, function(groupId) {
+                                    chrome.tabGroups.update(groupId, {
+                                        title: groupData.name,
+                                        color: groupData.color,
+                                        collapsed: groupData.collapsed
+                                    });
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+            break;
+        }
         case "deleteTabGroup": {
             let index = request.deleteTabGroup;
             let category = request.category;

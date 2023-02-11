@@ -112,6 +112,7 @@ body {
     border-radius: 100vh;
     padding: 2px 0px 0px 3px;
     margin-right: 5px;
+    position: relative;
 }
 .tabGroup .groupColor:not(.none) {
     box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.5);
@@ -142,6 +143,52 @@ body {
 }
 .tabGroup .groupColor.orange {
     background-color: #99702f;
+}
+
+.tabGroup .groupColor .groupColorHover {
+    display: none;
+    
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 30rem;
+    padding: 5px;
+
+    background-color: var(--extra-light);
+    border-radius: 10px;
+
+    z-index: 100;
+}
+.tabGroup .groupColor:hover .groupColorHover {
+    display: block;
+}
+.tabGroup .groupColorHover h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    width: 100%;
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tabGroup .groupColorHover .groupColorPage {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    margin: 5px 0;
+}
+.tabGroup .groupColorPage a {
+    color: #7eaadb;
+    margin-left: 5px;
+}
+.tabGroup .groupColorPage a:hover {
+    color: #99b5d6;
+}
+
+.tabGroup .groupColorHover .button.load {
+    width: 100%;
 }
 
 .button {
