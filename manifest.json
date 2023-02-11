@@ -1,5 +1,5 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "Canvas Tab Manager",
     "description": "A tab manager that links to canvas courses",
     "version": "1.0",
@@ -7,19 +7,16 @@
         "128": "images/logo.png"
     },
     "background": {
-        "scripts": [
-            "background.js"
-        ],
-        "persistent": true
+        "service_worker": "background.js"
     },
     "permissions": [
-        "management",
         "tabs",
+        "tabGroups",
         "storage",
-        "chrome://favicon/*"
+        "favicon"
     ],
-    "browser_action": {
-        "default_icon": "images/logo.png",
-        "default_title": "Canvas Tab Manager"
-    }
+    "optional_permissions": [
+        "management"
+    ],
+    "action": {}
 }

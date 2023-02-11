@@ -16,7 +16,7 @@ function updateTabs(tabs) {
             let groupData = tabs[i].groups[group];
             addedHTML += `<div class="groupColor ${groupData.color}">`
             for(let j = 0; j < groupData.tabs.length; j++) {
-                addedHTML += `<img src="chrome://favicon/${groupData.tabs[j]}" />`;
+                addedHTML += `<img src="chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(groupData.tabs[j])}&size=64" />`;
             }
             addedHTML += `</div>`;
         }
@@ -64,5 +64,9 @@ window.onload = function() {
     document.querySelector(".button.bring-tabs").addEventListener("click", function() {
         // Send a message to the background script to save the tabs
         chrome.runtime.sendMessage({type: "saveTabs"});
+    });
+    document.querySelector(".button.settings").addEventListener("click", function() {
+        // Open the settings page
+        document.getElementById("settings").style.display = "block";       
     });
 }

@@ -77,6 +77,7 @@ body {
     border-radius: 100vh;
     margin-right: 3px;
     box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.5);
+    background-color: var(--light);
 }
 
 .tabGroup .groupColor {
@@ -84,6 +85,8 @@ body {
     border-radius: 100vh;
     padding: 2px 0px 0px 3px;
     margin-right: 5px;
+}
+.tabGroup .groupColor:not(.none) {
     box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.5);
 }
 .tabGroup .groupColor.grey {
@@ -103,6 +106,9 @@ body {
 }
 .tabGroup .groupColor.pink {
     background-color: #912c91;
+}
+.tabGroup .groupColor.purple {
+    background-color: #5e2f9b;
 }
 .tabGroup .groupColor.cyan {
     background-color: #2d9494;

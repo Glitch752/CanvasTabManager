@@ -1,8 +1,6 @@
 let extensionID = chrome.runtime.id;
 
-chrome.browserAction.onClicked.addListener(function(tab) {
-    chrome.storage.sync.set({tabs: []});
-
+chrome.action.onClicked.addListener(function(tab) {
     bringInTabs();
 });
 
@@ -29,11 +27,32 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             getTabs(function(tabs) {
                 if(!tabs || !tabs[index]) return;
 
-                tabs = tabs[index].groups.reduce((acc, val) => acc.concat(val), []);
+                for(let group in tabs[index].groups) {
+                    let groupData = tabs[index].groups[group];
 
-                // Open the tabs
-                for (let i = 0; i < tabs.length; i++) {
-                    chrome.tabs.create({url: tabs[i]});
+                    let openedTabIds = [];
+
+                    for(let j = 0; j < groupData.tabs.length; j++) {
+                        chrome.tabs.create({url: groupData.tabs[j]}, function(tab) {
+                            openedTabIds.push(tab.id);
+
+                            if(openedTabIds.length == groupData.tabs.length) {
+                                // Check if this is a real group or the ungrouped tabs
+                                if(parseInt(group) !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+                                    // Grouped tabs
+                                    chrome.tabs.group({
+                                        tabIds: openedTabIds
+                                    }, function(groupId) {
+                                        chrome.tabGroups.update(groupId, {
+                                            title: groupData.name,
+                                            color: groupData.color,
+                                            collapsed: groupData.collapsed
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                    }
                 }
             });
             break;
@@ -109,13 +128,23 @@ function bringInTabs() {
         //   tabs (an array of tab urls)
         //   name (the name of the group)
         //   color (the color of the group)
+        //   collapsed (whether the group is collapsed)
 
         let urls = {}; 
         for (let i = 0; i < tabs.length; i++) {
             // Don't save the extension page
             if (tabs[i].url.startsWith("chrome-extension://" + extensionID) || !tabs[i].url) continue;
 
-            urls[tabs[i].groupId] = urls[tabs[i].groupId] || {tabs: [], name: "Group " + tabs[i].groupId, color: "red"};
+            if(!urls[tabs[i].groupId]) {
+                urls[tabs[i].groupId] = {tabs: [], name: "Group " + tabs[i].groupId, color: "none", collapsed: false};
+                if(tabs[i].groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+                    chrome.tabGroups.get(tabs[i].groupId, function(group) {
+                        urls[tabs[i].groupId].name = group.title;
+                        urls[tabs[i].groupId].color = group.color;
+                        urls[tabs[i].groupId].collapsed = group.collapsed;
+                    });
+                }
+            }
             urls[tabs[i].groupId].tabs.push(tabs[i].url);
 
             // Close the tab
