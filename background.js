@@ -60,7 +60,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         case "updateTabs": {
             getTabs(function(tabs) {
                 // Send a message to the extension page to update the tabs
-                chrome.runtime.sendMessage({type: "updateTabs", tabs: tabs});
+                chrome.runtime.sendMessage({type: "updateTabs"});
             });
             break;
         }
@@ -74,7 +74,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
                 // Save the tabs
                 saveTabs(tabs, function() {
                     // Send a message to the extension page to update the tabs
-                    chrome.runtime.sendMessage({type: "updateTabs", tabs: tabs});
+                    chrome.runtime.sendMessage({type: "updateTabs"});
                 });
             });
             break;
@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
                 // Save the tabs
                 saveTabs(tabs, function() {
                     // Send a message to the extension page to update the tabs
-                    chrome.runtime.sendMessage({type: "updateTabs", tabs: tabs});
+                    chrome.runtime.sendMessage({type: "updateTabs"});
                 });
             });
             break;
@@ -161,7 +161,7 @@ function bringInTabs() {
             // Save the tabs
             saveTabs(tabs, function() {
                 // Send a message to the extension page to update the tabs
-                chrome.runtime.sendMessage({type: "updateTabs", tabs: tabs});
+                chrome.runtime.sendMessage({type: "updateTabs"});
             });
         });
     });
