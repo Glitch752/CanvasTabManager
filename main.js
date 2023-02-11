@@ -187,6 +187,41 @@ window.onload = function() {
         // Open the settings page
         document.getElementById("settings").classList.toggle("open");   
     });
+    document.querySelector(".button.export").addEventListener("click", function() {
+        // Export the tabs
+        chrome.storage.sync.get("tabs", function(data) {
+            let tabs = data.tabs;
+
+            let exportData = JSON.stringify(tabs);
+
+            let a = document.createElement("a");
+            a.href = "data:application/octet-stream," + encodeURIComponent(exportData);
+            a.download = "tabs.json";
+            a.click();
+        });  
+    });
+    document.querySelector(".button.import").addEventListener("click", function() {
+        // Import the tabs
+        let fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = ".json";
+        fileInput.addEventListener("change", function() {
+            let file = fileInput.files[0];
+            let reader = new FileReader();
+            reader.onload = function() {
+                let tabs = JSON.parse(reader.result);
+                
+                // Set the tabs
+                chrome.storage.sync.set({tabs: tabs}, function() {
+                    // Update the tabs
+                    updateTabs(tabs);
+                });
+            };
+            reader.readAsText(file);
+        });
+        fileInput.click();
+    });
+
     document.querySelector(".button.close-settings").addEventListener("click", function() {
         // Close the settings page
         document.getElementById("settings").classList.toggle("open");   

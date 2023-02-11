@@ -242,9 +242,30 @@ body {
 .button.settings {
     background-color: #929292;
     width: 100%;
+    margin-bottom: 0.5rem;
 }
 .button.settings:hover {
     background-color: #a8a8a8;
+    color: #000;
+}
+
+.button.export {
+    background-color: #a3a342;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+.button.export:hover {
+    background-color: #b5b54c;
+    color: #000;
+}
+
+.button.import {
+    background-color: #a34242;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+.button.import:hover {
+    background-color: #b54c4c;
     color: #000;
 }
 
