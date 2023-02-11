@@ -18,6 +18,7 @@ chrome.runtime.onStartup.addListener(function() {
 
         if(data.settings?.linkToCanvas?.enabled) {
             addRequestListener();
+            updateClasses();
         }
     });
 });
@@ -102,7 +103,31 @@ function generateToken(token, domain, settings) {
         settings.linkToCanvas.token = token;
         settings.linkToCanvas.tokenID = response['id'];
         settings.linkToCanvas.domain = domain;
-        chrome.storage.sync.set({settings: settings});
+        chrome.storage.sync.set({settings: settings}, function() {
+            updateClasses();
+        });
+    });
+}
+
+function updateClasses() {
+    chrome.storage.sync.get("settings", function(data) {
+        let settings = data.settings;
+        if(!settings) return;
+
+        if(settings.linkToCanvas.token) {
+            fetch(`https://${settings.linkToCanvas.domain}.instructure.com/api/v1//courses?access_token=${settings.linkToCanvas.token}`).then(response => response.json()).then(response => {
+                let classes = [];
+                for(let i = 0; i < response.length; i++) {
+                    let course = response[i];
+                    classes.push({
+                        id: course.id,
+                        name: course.name,
+                        url: course.html_url
+                    });
+                }
+                chrome.storage.sync.set({classes: classes});
+            });
+        }
     });
 }
 
@@ -115,10 +140,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         case "loadTabs": {
             let index = request.loadTabs;
             getTabs(function(tabs) {
-                if(!tabs || !tabs[index]) return;
+                if(!tabs?.[0]?.[index]) return;
 
-                for(let group in tabs[index].groups) {
-                    let groupData = tabs[index].groups[group];
+                for(let group in tabs[0][index].groups) {
+                    let groupData = tabs[0][index].groups[group];
 
                     let openedTabIds = [];
 
@@ -147,19 +172,12 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             });
             break;
         }
-        case "updateTabs": {
-            getTabs(function(tabs) {
-                // Send a message to the extension page to update the tabs
-                chrome.runtime.sendMessage({type: "updateTabs"});
-            });
-            break;
-        }
         case "deleteTabGroup": {
             let index = request.deleteTabGroup;
             getTabs(function(tabs) {
-                if(!tabs || !tabs[index]) return;
+                if(!tabs?.[0]?.[index]) return;
 
-                tabs.splice(index, 1);
+                tabs[0].splice(index, 1);
 
                 // Save the tabs
                 saveTabs(tabs, function() {
@@ -173,9 +191,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             let index = request.changeTabGroupName;
             let name = request.name;
             getTabs(function(tabs) {
-                if(!tabs || !tabs[index]) return;
+                if(!tabs?.[0]?.[index]) return;
 
-                tabs[index].name = name;
+                tabs[0][index].name = name;
 
                 // Save the tabs
                 saveTabs(tabs, function() {
@@ -246,8 +264,8 @@ function bringInTabs() {
         }
 
         getTabs(function(tabs) {
-            if(!tabs) tabs = [];
-            tabs.push({
+            if(!tabs?.[0]) tabs = [[]];
+            tabs[0].push({
                 groups: urls,
                 name: "Science"
             });

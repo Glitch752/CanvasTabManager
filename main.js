@@ -12,11 +12,13 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 function updateTabs(tabs) {
     let tabsElement = document.getElementById("tabs");
     tabsElement.innerHTML = "";
-    for(let i = 0; i < tabs.length; i++) {
+    if(!tabs[0]) tabs[0] = [];
+    
+    for(let i = 0; i < tabs[0].length; i++) {
         let addedHTML = "";
-        addedHTML  += `<div class="tabGroup"><input type="text" value="${tabs[i].name}" /><div class="tabList">`;
-        for(let group in tabs[i].groups) {
-            let groupData = tabs[i].groups[group];
+        addedHTML  += `<div class="tabGroup"><input type="text" value="${tabs[0][i].name}" /><div class="tabList">`;
+        for(let group in tabs[0][i].groups) {
+            let groupData = tabs[0][i].groups[group];
             addedHTML += `<div class="groupColor ${groupData.color}">`
             for(let j = 0; j < groupData.tabs.length; j++) {
                 addedHTML += `<img src="chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(groupData.tabs[j])}&size=64" />`;
@@ -61,7 +63,10 @@ function changeTabGroupName(index, name) {
 
 window.onload = function() {
     // Send a message to the background script to get the tabs
-    chrome.runtime.sendMessage({type: "updateTabs"});
+    chrome.storage.sync.get("tabs", function(data) {
+        // Update the tabs
+        updateTabs(data.tabs);
+    });
 
     // Add button listeners
     document.querySelector(".button.bring-tabs").addEventListener("click", function() {
