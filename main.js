@@ -70,6 +70,70 @@ window.onload = function() {
     });
     document.querySelector(".button.settings").addEventListener("click", function() {
         // Open the settings page
-        document.getElementById("settings").style.display = "block";       
+        document.getElementById("settings").classList.toggle("open");   
+    });
+    document.querySelector(".button.close-settings").addEventListener("click", function() {
+        // Close the settings page
+        document.getElementById("settings").classList.toggle("open");   
+    });
+
+    chrome.storage.sync.get("settings", function(data) {
+        let settings = data.settings;
+        if(!settings) {
+            settings = {
+                linkToCanvas: {
+                    enabled: false,
+                    domain: null,
+                    apiKey: null
+                },
+                extension: {
+                    openOnStartup: false,
+                    clickIcon: "bringInTabs"
+                }
+            };
+
+            chrome.storage.sync.set({settings: settings});
+        }
+
+        function changeSetting(setting, key, value) {
+            settings[setting][key] = value;
+            chrome.storage.sync.set({settings: settings});
+        }
+
+        // Add listeners to settings and set the values
+        let linkToCanvas = document.querySelector("#settings #linkToCanvas");
+        linkToCanvas.addEventListener("change", function() {
+            // Send a message to the background script to change the link to canvas setting
+            changeSetting("linkToCanvas", "enabled", this.checked);
+        });
+        linkToCanvas.checked = settings.linkToCanvas.enabled;
+
+        let linkToCanvasDomain = document.querySelector("#settings #canvasDomain");
+        linkToCanvasDomain.addEventListener("input", function() {
+            // Send a message to the background script to change the link to canvas domain setting
+            changeSetting("linkToCanvas", "domain", this.value);
+        });
+        linkToCanvasDomain.value = settings.linkToCanvas.domain;
+
+        let linkToCanvasAPIKey = document.querySelector("#settings #canvasAPIKey");
+        linkToCanvasAPIKey.addEventListener("input", function() {
+            // Send a message to the background script to change the link to canvas API key setting
+            changeSetting("linkToCanvas", "apiKey", this.value);
+        });
+        linkToCanvasAPIKey.value = settings.linkToCanvas.apiKey;
+
+        let openOnStartup = document.querySelector("#settings #openOnStartup");
+        openOnStartup.addEventListener("change", function() {
+            // Send a message to the background script to change the open on startup setting
+            changeSetting("extension", "openOnStartup", this.checked);
+        });
+        openOnStartup.checked = settings.extension.openOnStartup;
+
+        let clickIcon = document.querySelector("#settings #clickExtensionIcon");
+        clickIcon.addEventListener("change", function() {
+            // Send a message to the background script to change the click icon setting
+            changeSetting("extension", "clickIcon", this.value);
+        });
+        clickIcon.value = settings.extension.clickIcon;
     });
 }

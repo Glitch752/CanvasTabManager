@@ -14,17 +14,41 @@
         <button class="button bring-tabs">Bring in tabs</button>
         <button class="button settings">Settings</button>
     </div>
-    <div class="settings" id="settings">
+    <div class="settings-area" id="settings">
         <div class="settings-header">
             <h1>Settings</h1>
             <button class="button close-settings">Close</button>
         </div>
         <div class="settings-body">
             <div class="settings-section">
-                <h2>Extension</h2>
+                <h2>Link to Canvas</h2>
+                <p>Link to Canvas to automatically import your courses and save tabs per course.</p>
                 <div class="settings-item">
-                    <label for="tabLimit">Tab limit</label>
-                    <input type="number" name="tabLimit" id="tabLimit" min="1" max="100" value="10">
+                    <label for="tabLimit">Enabled</label>
+                    <input type="checkbox" id="linkToCanvas" name="linkToCanvas">
+                </div>
+                <div class="settings-item">
+                    <label for="tabLimit">Canvas domain</label>
+                    <input type="text" id="canvasDomain" name="canvasDomain" placeholder="[https://canvas.instructure.com]">
+                </div>
+                <div class="settings-item">
+                    <label for="tabLimit">Canvas API key</label>
+                    <input type="text" id="canvasAPIKey" name="canvasAPIKey" placeholder="[API key]">
+                </div>
+            </div>
+            <div class="settings-section">
+                <h2>Extension</h2>
+                <p>Settings related to this extension</p>
+                <div class="settings-item">
+                    <label for="openOnStartup">Open on startup</label>
+                    <input type="checkbox" id="openOnStartup" name="openOnStartup">
+                </div>
+                <div class="settings-item">
+                    <label for="tabLimit">Clicking extension icon</label>
+                    <select name="clickExtensionIcon" id="clickExtensionIcon">
+                        <option value="bringInTabs">Brings in tabs</option>
+                        <option value="openSettings">Opens extension</option>
+                    </select>
                 </div>
             </div>
         </div>
