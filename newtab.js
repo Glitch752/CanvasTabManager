@@ -1,3 +1,14 @@
+// Add a listener for messages from the background script
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if(request.type == "updateTabs") {
+        // Get the tabs
+        chrome.storage.sync.get("tabs", function(data) {
+            // Update the tabs
+            updateTabs(data.tabs);
+        });
+    }
+});
+
 function updateTabs(tabs) {
     let tabsElement = document.getElementById("tabs");
     tabsElement.innerHTML = "";
