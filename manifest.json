@@ -16,7 +16,6 @@
         "favicon"
     ],
     "optional_permissions": [
-        "management",
         "webRequest"
     ],
     "optional_host_permissions": [
