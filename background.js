@@ -41,6 +41,9 @@ chrome.runtime.onInstalled.addListener(function() {
                 extension: {
                     openOnStartup: false,
                     clickIcon: "bringInTabs"
+                },
+                newTabPage: {
+                    enabled: false
                 }
             };
 

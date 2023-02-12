@@ -33,6 +33,10 @@ body {
     flex-direction: column;
     justify-content: flex-start;
 }
+.tabs.full {
+    width: 100%;
+}
+
 .category {
     display: flex;
     flex-wrap: wrap;

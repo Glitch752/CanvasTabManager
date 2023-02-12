@@ -11,6 +11,15 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
 });
 
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    chrome.storage.sync.get("settings", function(data) {
+        if(data?.settings?.newTabPage?.enabled && tab.url === "chrome://newtab/") {
+            // Redirect to our custom new tab page
+            chrome.tabs.update(tabId, {url: chrome.runtime.getURL("newtab.html")});
+        }
+    });
+});
+
 function updateAskClass() {
     let askClassBody = document.getElementById("askClassBody");
     askClassBody.innerHTML = "";
@@ -88,7 +97,7 @@ function updateTabs(tabs) {
                     </div>`;
                 }
 
-                addedHTML += `<button class="button load" data-group=${groupId}>Load</button></div></div>`;
+                addedHTML += `<button class="button load loadCategory" data-group=${groupId}>Load</button></div></div>`;
             }
             addedHTML += `</div><div class="buttons">
                 <button class="load button">Load</button>
@@ -96,7 +105,7 @@ function updateTabs(tabs) {
             </div></div>`;
             categoryElement.appendChild(document.createRange().createContextualFragment(addedHTML));
 
-            let loadButtons = categoryElement.querySelectorAll(".load");
+            let loadButtons = categoryElement.querySelectorAll(".load.loadCategory");
             for(let i = 0; i < loadButtons.length; i++) {
                 loadButtons[i].addEventListener("click", function() {
                     loadTabs(group, category, loadButtons[i].dataset.group);
@@ -113,7 +122,7 @@ function updateTabs(tabs) {
 
             // Add listeners to the buttons
             let buttons = categoryElement.querySelectorAll(".buttons")[group];
-            buttons.querySelectorAll(".load")[0].addEventListener("click", function() {
+            buttons.querySelectorAll(".load:not(.category)")[0].addEventListener("click", function() {
                 loadTabs(group, category);
             });
             buttons.querySelectorAll(".close")[0].addEventListener("click", function() {
@@ -306,5 +315,38 @@ window.onload = function() {
             changeSetting("extension", "clickIcon", this.value);
         });
         clickIcon.value = settings.extension.clickIcon;
+
+        let newTabPage = document.querySelector("#settings #newTabPage");
+        newTabPage.addEventListener("change", function() {
+            // If we don't have it, request the management permission
+            if(!settings.newTabPage.enabled) {
+                // Check if we have the permission
+                chrome.permissions.contains({
+                    permissions: ["management"]
+                }, function(result) {
+                    if(result) {
+                        // If we have the permission, change the setting
+                        changeSetting("newTabPage", "enabled", true);
+                    } else {
+                        chrome.permissions.request({
+                            permissions: ["management"]
+                        }, function(granted) {
+                            if(granted) {
+                                // The user granted the permission, so change the setting. We don't need to check the checkbox because it's already checked.
+                                changeSetting("newTabPage", "enabled", true);
+                            } else {
+                                // The user didn't grant the permission, so don't change the setting and uncheck the checkbox.
+                                newTabPage.checked = false;
+                                alert("You must enable the management permission to use the new tab page. This is so we can override the new tab page.");
+                            }
+                        });
+                    }
+                });
+            } else {
+                // If we have it, change the setting
+                changeSetting("newTabPage", "enabled", false);
+            }
+        });
+        newTabPage.checked = settings.newTabPage.enabled;
     });
 }
