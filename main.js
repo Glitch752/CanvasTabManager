@@ -318,34 +318,7 @@ window.onload = function() {
 
         let newTabPage = document.querySelector("#settings #newTabPage");
         newTabPage.addEventListener("change", function() {
-            // If we don't have it, request the management permission
-            if(!settings.newTabPage.enabled) {
-                // Check if we have the permission
-                chrome.permissions.contains({
-                    permissions: ["management"]
-                }, function(result) {
-                    if(result) {
-                        // If we have the permission, change the setting
-                        changeSetting("newTabPage", "enabled", true);
-                    } else {
-                        chrome.permissions.request({
-                            permissions: ["management"]
-                        }, function(granted) {
-                            if(granted) {
-                                // The user granted the permission, so change the setting. We don't need to check the checkbox because it's already checked.
-                                changeSetting("newTabPage", "enabled", true);
-                            } else {
-                                // The user didn't grant the permission, so don't change the setting and uncheck the checkbox.
-                                newTabPage.checked = false;
-                                alert("You must enable the management permission to use the new tab page. This is so we can override the new tab page.");
-                            }
-                        });
-                    }
-                });
-            } else {
-                // If we have it, change the setting
-                changeSetting("newTabPage", "enabled", false);
-            }
+            changeSetting("newTabPage", "enabled", this.checked);
         });
         newTabPage.checked = settings.newTabPage.enabled;
     });
