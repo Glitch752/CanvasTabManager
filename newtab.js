@@ -47,8 +47,10 @@ function updateTabs(tabs) {
                 <button class="close button">X</button>
             </div></div>`;
             categoryElement.appendChild(document.createRange().createContextualFragment(addedHTML));
+            
+            let tabGroup = categoryElement.querySelectorAll(".tabGroup")[group];
 
-            let loadButtons = categoryElement.querySelectorAll(".load.loadCategory");
+            let loadButtons = tabGroup.querySelectorAll(".load.loadCategory");
             for(let i = 0; i < loadButtons.length; i++) {
                 loadButtons[i].addEventListener("click", function() {
                     loadTabs(group, category, loadButtons[i].dataset.group);
@@ -56,7 +58,6 @@ function updateTabs(tabs) {
             }
 
             // Drag and drop
-            let tabGroup = categoryElement.querySelectorAll(".tabGroup")[group];
             tabGroup.draggable = true;
             tabGroup.addEventListener("dragstart", function(event) {
                 event.dataTransfer.setData("group", group);
@@ -65,7 +66,7 @@ function updateTabs(tabs) {
 
             // Add listeners to the buttons
             let buttons = categoryElement.querySelectorAll(".buttons")[group];
-            buttons.querySelectorAll(".load:not(.category)")[0].addEventListener("click", function() {
+            buttons.querySelectorAll(".load")[0].addEventListener("click", function() {
                 loadTabs(group, category);
             });
             buttons.querySelectorAll(".close")[0].addEventListener("click", function() {
