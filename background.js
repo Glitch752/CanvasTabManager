@@ -277,10 +277,11 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         case "changeTabGroupName": {
             let index = request.changeTabGroupName;
             let name = request.name;
+            let category = request.category;
             getTabs(function(tabs) {
-                if(!tabs?.[0]?.[index]) return;
+                if(!tabs?.[category]?.groups?.[index]) return;
 
-                tabs[0].groups[index].name = name;
+                tabs[category].groups[index].name = name;
 
                 // Save the tabs
                 saveTabs(tabs, function() {

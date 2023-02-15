@@ -75,7 +75,7 @@ function updateTabs(tabs) {
             // Add a listener to the text box
             let textBox = categoryElement.querySelectorAll("input")[group];
             textBox.addEventListener("change", function() {
-                changeTabGroupName(group, textBox.value);
+                changeTabGroupName(group, category, textBox.value);
             });
         }
 
@@ -119,4 +119,12 @@ function loadTabs(index, category, group = null) {
         // Send a message to the background script to load the tabs
         chrome.runtime.sendMessage({type: "loadTabs", loadTabs: index, category: category});
     }
+}
+function deleteTabGroup(index, category) {
+    // Send a message to the background script to delete the tab group
+    chrome.runtime.sendMessage({type: "deleteTabGroup", deleteTabGroup: index, category: category});
+}
+function changeTabGroupName(index, category, name) {
+    // Send a message to the background script to change the tab group name
+    chrome.runtime.sendMessage({type: "changeTabGroupName", changeTabGroupName: index, name: name, category: category});
 }
