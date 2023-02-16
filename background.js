@@ -30,6 +30,7 @@ chrome.runtime.onInstalled.addListener(function() {
     
     chrome.storage.sync.get("settings", function(data) {
         let settings = data.settings;
+        console.log(settings);
         if(!settings) {
             settings = {
                 linkToCanvas: {
@@ -48,9 +49,7 @@ chrome.runtime.onInstalled.addListener(function() {
             };
 
             chrome.storage.sync.set({settings: settings});
-        }
-
-        if(settings?.linkToCanvas?.enabled) {
+        } else if(settings?.linkToCanvas?.enabled) {
             updateClasses(false);
         }
     });
@@ -62,6 +61,9 @@ let generatedToken = false;
 function addRequestListener() {
     if(listenerAdded) return;
     listenerAdded = true;
+
+    // For some reason, Edge does some weird stuff with webRequest, so we need to check if it exists first.
+    if(!chrome.webRequest) return;
 
     // Handling for grabbing canvas API keys so we can get classes.
     chrome.webRequest.onBeforeSendHeaders.addListener((data) => {

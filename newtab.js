@@ -1,3 +1,17 @@
+chrome.storage.sync.get("settings", function(data) {
+    if(!data?.settings?.newTabPage?.enabled) {
+        // This seems to work on almost every browser.
+        // Check if we're on Brave Browser so we can use brave://new-tab-page/ instead of chrome-search://local-ntp/local-ntp.html
+        (async function() {
+            if((navigator.brave && await navigator.brave.isBrave() || false)) {
+                chrome.tabs.update({url: "brave://new-tab-page/"});
+            } else {
+                chrome.tabs.update({url: "chrome-search://local-ntp/local-ntp.html"});
+            }
+        })();
+    }
+});
+
 // Add a listener for messages from the background script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if(request.type == "updateTabs") {

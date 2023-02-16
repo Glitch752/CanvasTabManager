@@ -21,5 +21,8 @@
     "optional_host_permissions": [
         "https://*.instructure.com/*"
     ],
+    "chrome_url_overrides": {
+        "newtab": "newtab.html"
+    },
     "action": {}
 }

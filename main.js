@@ -11,15 +11,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
 });
 
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-    chrome.storage.sync.get("settings", function(data) {
-        if(data?.settings?.newTabPage?.enabled && tab.url === "chrome://newtab/") {
-            // Redirect to our custom new tab page
-            chrome.tabs.update(tabId, {url: chrome.runtime.getURL("newtab.html")});
-        }
-    });
-});
-
 function updateAskClass() {
     let askClassBody = document.getElementById("askClassBody");
     askClassBody.innerHTML = "";
